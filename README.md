@@ -1,0 +1,1 @@
+# Guitar-scale-trainer
