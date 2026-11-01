@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scale Trainer</title>
+<style>
+:root{--bg:#eceff3;--card:#fff;--fg:#14181f;--mut:#5d6675;--line:#d3d9e2;--acc:#2347c5;--onacc:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10131a;--card:#1a1f2a;--fg:#eef1f7;--mut:#98a2b5;--line:#2c3444;--acc:#8fa8ff;--onacc:#10131a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10131a;--card:#1a1f2a;--fg:#eef1f7;--mut:#98a2b5;--line:#2c3444;--acc:#8fa8ff;--onacc:#10131a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{touch-action:manipulation;margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:14px 14px 28px}
+h1{font-size:20px;margin:2px 0 12px;letter-spacing:-.01em}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+select{width:100%;padding:10px 8px;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px}
+.board{background:#2b1810;border-radius:12px;padding:6px 0 2px;overflow-x:auto;margin-top:4px}
+.board svg{display:block}
+.now{display:flex;align-items:baseline;justify-content:space-between;margin:14px 2px 4px}
+.big{font-size:64px;font-weight:800;line-height:1;letter-spacing:-.03em;min-width:2.2ch}
+.big small{font-size:22px;font-weight:600;color:var(--mut);margin-left:8px;letter-spacing:0}
+.nx{font-size:15px;color:var(--mut);text-align:right}
+.nx b{color:var(--fg);font-size:20px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:8px 0 4px}
+.bar i{display:block;height:100%;background:var(--acc);width:0}
+.cnt{font-size:13px;color:var(--mut);margin-bottom:12px}
+.tr{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:8px;margin-bottom:14px}
+button{font:inherit;font-weight:700;padding:16px 8px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+button.go{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+button:disabled{opacity:.4}
+[hidden]{display:none!important}
+input[type=text]{width:100%;padding:10px 8px;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px}
+input[type=range]{width:100%}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+  .set{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.bpm{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bpm input{flex:1}
+.bpm output{font-weight:700;min-width:7ch;text-align:right;font-variant-numeric:tabular-nums}
+.set .row{margin:0 0 10px}
+.chk{display:flex;gap:18px}
+.chk label{display:flex;align-items:center;gap:6px;color:var(--fg);font-size:15px;margin:0}
+.tmr{padding:10px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);font-weight:700;font-variant-numeric:tabular-nums;text-align:center}
+.tmr.warn{color:#e0483a}
+.kbar{margin:6px 0 10px}
+.kk{font-size:24px;font-weight:800;letter-spacing:-.01em}
+.kx{font-size:15px;color:var(--mut);min-height:1.4em;margin:2px 0}
+.kch{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.kch button{padding:8px 12px;font-size:15px;border-radius:999px;border:2px solid var(--line)}
+.kch button.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+.kch button.nx{border:2px dashed var(--acc)}
+.krate{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0 4px}
+.krate button{padding:12px 6px;font-size:15px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>Scale Trainer</h1>
+  <div class="row">
+<div><label for="root">Key</label><select id="root"></select></div>
+<div><label for="scale">Scale</label><select id="scale"></select></div>
+</div>
+<div class="row">
+<div><label for="nps">Notes per string</label><select id="nps"><option value="auto">Auto (spread over neck)</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+<div><label for="frets">Frets on guitar</label><select id="frets"><option value="21">21</option><option value="22" selected>22</option><option value="24">24</option></select></div>
+</div>
+<div class="row"><div style="grid-column:1/-1"><label for="seq">Sequence</label><select id="seq"></select></div></div>
+<div class="row" id="cuRow" hidden><div style="grid-column:1/-1"><label for="cu">Your sequence (scale degrees, like 1 3 2 4)</label><input id="cu" type="text" value="1 3 2 4" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="cuMsg"><div class="cnt" id="cuMsg" style="margin:4px 0 0"></div></div></div>
+<div class="row"><div><label for="rn">Repeat each note</label><select id="rn"><option value="1">1 (once)</option><option value="2">2 times</option><option value="3">3 times</option><option value="4">4 times</option><option value="6">6 times</option><option value="8">8 times</option></select></div><div><label for="rg">Repeat each group</label><select id="rg"><option value="1">1 (once)</option><option value="2">2 times</option><option value="3">3 times</option><option value="4">4 times</option></select></div></div>
+  <div class="kbar" id="kbar" hidden><div class="kk" id="kk"></div><div class="kx" id="kx"></div><div class="kch" id="kch"></div><div class="krate"><button id="kok" type="button">Clean</button><button id="kno" type="button">Again</button><button id="khd" type="button">Mark hard</button></div><div class="cnt" id="kst" style="margin:4px 0 0"></div></div>
+<div class="board" id="bd"><svg id="fb" role="img" aria-label="Fretboard"></svg></div>
+<div class="now"><div class="big" id="cur">–</div><div class="nx">Next<br><b id="nxt">–</b></div></div>
+<div class="bar"><i id="pr"></i></div>
+<div class="cnt" id="cnt"></div>
+<div class="tr">
+<button id="prev" aria-label="Previous note">Back</button>
+<button id="play" class="go">Play</button>
+<button id="next" aria-label="Next note">Next</button>
+</div>
+<div class="row" style="grid-template-columns:auto 1fr;align-items:center;margin-bottom:14px"><button id="lpb" type="button" style="padding:12px 16px">Set loop</button><div class="cnt" id="lp" style="margin:0"></div></div>
+<div class="row" style="margin-bottom:14px">
+<div><label for="timer">Practice timer</label><select id="timer"><option value="0">Off</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option></select></div>
+<div><label>Time left</label><div id="tleft" class="tmr">—</div></div>
+</div>
+<details class="set" open><summary>Key changes</summary>
+<div class="row"><div style="grid-column:1/-1"><label for="kpre">Preset</label><select id="kpre"><option value="">Choose a key-change preset…</option></select></div></div>
+<div class="row"><div><label for="kc">Key cycle</label><select id="kc"><option value="off">Off (one key)</option><option value="m3d">Major thirds down (Giant Steps)</option><option value="m3u">Major thirds up</option><option value="mn3">Minor thirds up</option><option value="wt">Whole tones up</option><option value="p4">Fourths up</option><option value="p5">Fifths up (circle)</option><option value="cu">Chromatic up</option><option value="cd">Chromatic down</option><option value="rnd">Random keys</option></select></div><div><label for="kn">Keys in cycle</label><select id="kn"><option value="all">Whole cycle</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="12">12</option></select></div></div>
+<div class="row"><div><label for="kl">Change key</label><select id="kl"><option value="l1">After 1 lap</option><option value="l2">After 2 laps</option><option value="l4">After 4 laps</option><option value="b2">After 2 beats</option><option value="b4">After 4 beats</option><option value="b8">After 8 beats</option><option value="b16">After 16 beats</option></select></div><div><label for="ko">Order</label><select id="ko"><option value="fix">Fixed</option><option value="shuf">Shuffle each cycle</option></select></div></div>
+<div class="row"><div><label for="kq">Show next key</label><select id="kq"><option value="last">Near the change</option><option value="always">Always</option><option value="blind">Never (blind)</option></select></div><div><label for="kd">Practice</label><select id="kd"><option value="full">Full cycle</option><option value="one">One transition (tap two keys)</option><option value="hard">My hardest transition</option></select></div></div>
+<div class="row"><div><label for="kt">Tempo ladder</label><select id="kt"><option value="0">Off</option><option value="2">+2 BPM per 2 clean</option><option value="4">+4 BPM per 2 clean</option><option value="8">+8 BPM per 2 clean</option></select></div><div><label for="kr">Range</label><select id="kr"><option value="0">Whole neck</option><option value="2">2 octaves (position)</option><option value="1">1 octave (position)</option></select></div></div>
+<div class="row"><button id="kcl" type="button" style="padding:10px">Clear hard marks</button><div class="cnt" style="margin:0;align-self:center">Clean/Again counts your own judgement. The app cannot hear you.</div></div>
+</details>
+  <div class="set">
+<div class="bpm"><label for="bpm" style="margin:0">Tempo</label><input id="bpm" type="range" min="40" max="200" value="80"><output id="bv">80 BPM</output></div>
+<div class="row">
+<div><label for="mode">Mode</label><select id="mode"><option value="auto">Follow tempo</option><option value="tap">Tap to step</option></select></div>
+<div><label for="dir">Direction</label><select id="dir"><option value="up">Low to high</option><option value="down">High to low</option><option value="ud">Up and down</option></select></div>
+</div>
+<div class="row">
+<div><label for="sub">Notes per beat</label><select id="sub"><option value="1">1 (quarter)</option><option value="2">2 (eighth)</option></select></div>
+<div></div>
+</div>
+<div class="row"><div><label for="drone">Drone chord</label><select id="drone"><option value="off">Off</option><option value="root">Root</option><option value="fifth">Root + fifth</option><option value="triad">Triad</option><option value="four">With 7th or 6th</option></select></div><div><label for="dv">Drone volume</label><input id="dv" type="range" min="0" max="100" value="40"></div></div>
+<div class="cnt" id="dn" style="margin:-4px 0 10px;font-size:14px;font-weight:600;color:var(--fg)"></div>
+<div class="chk"><label><input type="checkbox" id="tone" checked>Play notes</label><label><input type="checkbox" id="click" checked>Click</label></div>
+</div>
+</main>
+<script>
+var NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+var IV=['R','b2','2','b3','3','4','b5','5','b6','6','b7','7'];
+var OPEN=[40,45,50,55,59,64];
+  var SC={'Major':[0,2,4,5,7,9,11],'Natural minor':[0,2,3,5,7,8,10],'Harmonic minor':[0,2,3,5,7,8,11],'Melodic minor':[0,2,3,5,7,9,11],'Major pentatonic':[0,2,4,7,9],'Minor pentatonic':[0,3,5,7,10],'Blues':[0,3,5,6,7,10],'Dorian':[0,2,3,5,7,9,10],'Phrygian':[0,1,3,5,7,8,10],'Lydian':[0,2,4,6,7,9,11],'Mixolydian':[0,2,4,5,7,9,10],'Locrian':[0,1,3,5,6,8,10],'Chromatic':[0,1,2,3,4,5,6,7,8,9,10,11],'Whole tone':[0,2,4,6,8,10],'Diminished (whole-half)':[0,2,3,5,6,8,9,11],'Diminished (half-whole)':[0,1,3,4,6,7,9,10],'Phrygian dominant':[0,1,4,5,7,8,10],'Double harmonic':[0,1,4,5,7,8,11],'Hungarian minor':[0,2,3,6,7,8,11],'Harmonic major':[0,2,4,5,7,8,11],'Neapolitan minor':[0,1,3,5,7,8,10],'Neapolitan major':[0,1,3,5,7,9,11],'Lydian dominant':[0,2,4,6,7,9,10],'Lydian augmented':[0,2,4,6,8,9,11],'Mixolydian b6':[0,2,4,5,7,8,10],'Dorian b2':[0,1,3,5,7,9,10],'Locrian #2':[0,2,3,5,6,8,10],'Altered':[0,1,3,4,6,8,10],'Major blues':[0,2,3,4,7,9],'Bebop dominant':[0,2,4,5,7,9,10,11],'Bebop major':[0,2,4,5,7,8,9,11],'Hirajoshi':[0,2,3,7,8],'In-sen':[0,1,5,7,10]};
+  var $=function(i){return document.getElementById(i)};
+var rootS=$('root'),scaleS=$('scale');
+NN.forEach(function(n,i){rootS.add(new Option(n,i))});
+Object.keys(SC).forEach(function(k){scaleS.add(new Option(k,k))});
+rootS.value=9;
+var SEQ=[['Straight scale (1-2-3-4…)',[0]],['Thirds (1-3, 2-4, 3-5…)',[0,2]],['Fourths (1-4, 2-5, 3-6…)',[0,3]],['Fifths (1-5, 2-6, 3-7…)',[0,4]],['Sixths (1-6, 2-7, 3-8…)',[0,5]],['Sevenths (1-7, 2-8, 3-9…)',[0,6]],['Octaves (1-8, 2-9, 3-10…)',[0,'L']],['Groups of 3 (1-2-3, 2-3-4…)',[0,1,2]],['Groups of 4 (1-2-3-4, 2-3-4-5…)',[0,1,2,3]],['Groups of 5 (1-2-3-4-5, 2-3-4-5-6…)',[0,1,2,3,4]],['Do-mi-re-fa (1-3-2-4, 2-4-3-5…)',[0,2,1,3]],['Thirds then step (1-3-2, 2-4-3…)',[0,2,1]],['Up 3, back 1 (1-2-3-2, 2-3-4-3…)',[0,1,2,1]],['Up 3, back to start (1-2-3-1, 2-3-4-2…)',[0,1,2,0]],['Neighbor weave (1-2-1-3, 2-3-2-4…)',[0,1,0,2]],['Triads (1-3-5, 2-4-6…)',[0,2,4]],['Triads up and back (1-3-5-3, 2-4-6-4…)',[0,2,4,2]],['Seventh chords (1-3-5-7, 2-4-6-8…)',[0,2,4,6]],['Fifths zigzag (1-5-2-6, 2-6-3-7…)',[0,4,1,5]]];
+SEQ.push(['Coltrane (1-2-3-5, 2-3-4-6…)',[0,1,2,4]]);
+SEQ.push(['Custom… (type your own)',[0]]);
+SEQ.forEach(function(s,i){$('seq').add(new Option(s[0],i))});
+  var seq=[],ord=[],gi=[],gk=[],gn=0,loopA=-1,loopB=-1,lpMode=0,pcs=[],maxF=22,root=9,p=0,timer=null,playing=false,tc=0,ctx=null;
+var segs=[],ev=[],view=-1,firstPlayed=[],tEnd=0,tLeft=0,tIv=null;
+var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)');
+
+function build(){
+  var rootPc=+rootS.value,scn=scaleS.value,hi0;maxF=+$('frets').value;hi0=OPEN[5]+maxF;
+  var nps=$('nps').value,sub=+$('sub').value,d=$('dir').value,R1=+$('rn').value,R2=+$('rg').value,rng=+$('kr').value;
+  var sel=+$('seq').value,cust=sel==SEQ.length-1,L=SC[scn].length,offB=(cust?parseCu():SEQ[sel][1]).map(function(o){return o=='L'?L:o});
+  $('cuRow').hidden=!cust;
+  var act=loopA>=0&&loopB>=0;
+  segs=[];ev=[];kp.grp=[];
+  var anchor=null;
+  var mkSeg=function(r,useLoop){
+    var pc2=SC[scn].map(function(x){return (x+r)%12}),P=[],sp0,i;
+    if(rng==0){for(var m=OPEN[0];m<=hi0;m++)if(pc2.indexOf(m%12)>-1)P.push(m);sp0=P[0]}
+    else{
+      var o2=rng,cand=[];
+      while(o2>=1){cand=[];for(var m1=OPEN[0];m1<=hi0-12*o2;m1++)if(m1%12==r)cand.push(m1);if(cand.length)break;o2--}
+      if(!cand.length){o2=1;cand=[OPEN[0]+((r-OPEN[0]%12+12)%12)]}
+      sp0=anchor==null?cand[0]:nearest(cand,anchor);
+      for(var m2=sp0;m2<=sp0+12*o2;m2++)if(pc2.indexOf(m2%12)>-1)P.push(m2);
+    }
+    anchor=sp0;
+    var s0=0;
+    if(rng>0){s0=-1;for(i=0;i<6;i++){var f0=sp0-OPEN[i];if(f0>=0&&f0<=8){s0=i;break}}if(s0<0)for(i=5;i>=0;i--)if(OPEN[i]<=sp0){s0=i;break}}
+    var kk=nps=='auto'?Math.ceil(P.length/(6-s0)):+nps,sq=[],idx=0;
+    for(i=s0;i<6;i++){var cnt=0;while(idx<P.length){var mm=P[idx],f=mm-OPEN[i];if(i<5&&(f>maxF||(cnt>=kk&&mm>=OPEN[i+1])))break;sq.push({m:mm,i:i,f:f});idx++;cnt++}}
+    var lo=useLoop?loopA:0,hi=useLoop?loopB:sq.length-1,n=hi-lo+1,od=[],g1=[],g2=[],gc=0,off=offB;
+    var run=function(dr){for(var s=dr>0?lo:hi;dr>0?s<=hi:s>=lo;s+=dr){var g=off.map(function(o){return s+dr*o});if(g.some(function(x){return x<lo||x>hi}))continue;gc++;var c=0;for(var r2=0;r2<R2;r2++)g.forEach(function(x){for(var r1=0;r1<R1;r1++){od.push(x);g1.push(gc);g2.push(c++)}})}};
+    if(d!='down')run(1);
+    if(d!='up')run(-1);
+    if(!od.length){off=[0];run(1)}
+    if(off.length==1&&d=='ud'){var R=R1*R2;od.splice(n*R,R);g1.splice(n*R,R);g2.splice(n*R,R);od.splice(-R,R);g1.splice(-R,R);g2.splice(-R,R)}
+    var fp=[];for(var z=0;z<sq.length;z++)fp[z]=1e9;
+    for(var z2=0;z2<od.length;z2++)if(fp[od[z2]]===1e9)fp[od[z2]]=z2;
+    return {seq:sq,ord:od,gi:g1,gk:g2,gn:gc,pcs:pc2,root:r,fp:fp,sp:sp0};
+  };
+  var addGroup=function(off,gid,ki,n,cyc){
+    var S=mkSeg((rootPc+off)%12,false);S.id=segs.length;S.g=gid;segs.push(S);
+    var kl=$('kl').value,tot=kl[0]=='b'?(+kl.slice(1))*sub:S.ord.length*(+kl.slice(1));
+    var G={id:gid,off:off,ki:ki,n:n,cyc:cyc,s:S.id,e0:ev.length};
+    for(var t=0;t<tot;t++)ev.push({s:S.id,k:S.ord[t%S.ord.length],q:t%S.ord.length});
+    G.e1=ev.length-1;G.laps=Math.max(1,Math.ceil(tot/S.ord.length));kp.grp.push(G);return G;
+  };
+  if(kpSetup(act,rootPc)){kp.add=addGroup;kpAppend()}
+  else{
+    var S0=mkSeg(rootPc,act);S0.id=0;S0.g=0;segs.push(S0);
+    for(var i0=0;i0<S0.ord.length;i0++)ev.push({s:0,k:S0.ord[i0],q:i0});
+    kp.grp=[{id:0,off:0,ki:0,n:1,cyc:0,s:0,e0:0,e1:ev.length-1,laps:1}];
+  }
+  useSeg(segs[ev[0].s]);p=0;kpChips();
+}
+  var CW=46,X0=40;
+function xOf(f){return f==0?X0-18:X0+(f-.5)*CW}
+function yOf(i){return 164-i*30}
+function board(ci,ni,lp){
+  var W=X0+maxF*CW+14,h='',used={},j;
+  seq.forEach(function(n){used[n.i+'_'+n.f]=1});
+  [3,5,7,9,15,17,19,21].forEach(function(f){if(f<=maxF)h+='<circle cx="'+xOf(f)+'" cy="89" r="6" fill="#3d2619"/>'});
+  [12,24].forEach(function(f){if(f<=maxF)h+='<circle cx="'+xOf(f)+'" cy="59" r="6" fill="#3d2619"/><circle cx="'+xOf(f)+'" cy="119" r="6" fill="#3d2619"/>'});
+  for(var f=0;f<=maxF;f++)h+='<line x1="'+(X0+f*CW)+'" x2="'+(X0+f*CW)+'" y1="14" y2="164" stroke="#b9b2a6" stroke-width="'+(f==0?5:2)+'"/>';
+  for(var i=0;i<6;i++)h+='<line x1="'+(X0-30)+'" x2="'+W+'" y1="'+yOf(i)+'" y2="'+yOf(i)+'" stroke="#d9d4c8" stroke-width="'+(1+(5-i)*.45)+'"/>';
+  for(var g=1;g<=maxF;g++)h+='<text x="'+xOf(g)+'" y="192" text-anchor="middle" font-size="12" fill="#b9b2a6">'+g+'</text>';
+  for(var s=0;s<6;s++)for(var q=0;q<=maxF;q++){
+    if(pcs.indexOf((OPEN[s]+q)%12)>-1&&!used[s+'_'+q])h+='<circle cx="'+xOf(q)+'" cy="'+yOf(s)+'" r="3.5" fill="#6b5442"/>';
+  }
+  h+='<polyline fill="none" stroke="#8a7a66" stroke-opacity=".55" stroke-width="2" points="'+seq.map(function(n){return xOf(n.f)+','+yOf(n.i)}).join(' ')+'"/>';
+  seq.forEach(function(n,k){
+    var x=xOf(n.f),y=yOf(n.i),pc=n.m%12,c=k==ci,nx=k==ni&&!c,dn=firstPlayed[k]<lp&&!c;
+    var fill=c?'#f5b82e':dn?'#2f6f66':'#4a3326',tx=c?'#2b1810':'#efe6d6',act=loopA>=0&&loopB>=0;
+    h+='<g data-k="'+k+'"'+(act&&(k<loopA||k>loopB)?' opacity=".3"':'')+'>';
+    if(c)h+='<circle cx="'+x+'" cy="'+y+'" r="21" fill="#f5b82e" fill-opacity=".28"/>';
+    if(pc==root)h+='<circle cx="'+x+'" cy="'+y+'" r="'+(c?18:15)+'" fill="none" stroke="#6fe3d0" stroke-width="2"/>';
+    h+='<circle cx="'+x+'" cy="'+y+'" r="'+(c?14:12)+'" fill="'+fill+'"'+(nx?' stroke="#f5b82e" stroke-width="2.5" stroke-dasharray="3 3"':'')+'/>';
+    h+='<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" font-size="'+(c?13:11)+'" font-weight="700" fill="'+tx+'">'+NN[pc]+'</text>';
+    if(act&&(k==loopA||k==loopB))h+='<text x="'+x+'" y="'+(y-19)+'" text-anchor="middle" font-size="11" font-weight="700" fill="#6fe3d0">'+(k==loopA?'A':'B')+'</text>';
+    h+='<circle cx="'+x+'" cy="'+y+'" r="20" fill="transparent"/></g>';
+  });
+  var fb=$('fb');fb.setAttribute('width',W);fb.setAttribute('height',200);fb.setAttribute('viewBox','0 0 '+W+' 200');fb.innerHTML=h;
+  var bd=$('bd');
+  bd.scrollTo({left:xOf(seq[ci].f)-bd.clientWidth/2,behavior:(RM.matches||$('bpm').value*$('sub').value>360)?'auto':'smooth'});
+}
+function render(){
+  kpEnsure(p);
+  var e=ev[p],S=segs[e.s];if(view!==e.s)useSeg(S);
+  var ci=e.k,lp=e.q,n=seq[ci],j=1,e2=ev[(p+1)%ev.length];
+  while(j<ev.length&&e2.s==e.s&&e2.k==e.k){j++;e2=ev[(p+j)%ev.length]}
+  var ni=e2.s==e.s?e2.k:-1,nn=segs[e2.s].seq[e2.k];
+  board(ci,ni,lp);
+  $('cur').innerHTML=NN[n.m%12]+'<small>'+IV[(n.m-root+120)%12]+'</small>';
+  $('nxt').textContent=NN[nn.m%12];
+  var G=kp.grp[S.g];
+  $('pr').style.width=((p-G.e0+1)/(G.e1-G.e0+1)*100)+'%';
+  $('cnt').textContent=(ord.length>gn?'Group '+gi[lp]+' of '+gn+' \u00b7 note '+(gk[lp]+1)+' \u00b7 ':'Note '+(lp+1)+' of '+ord.length+' \u00b7 ')+'string '+(6-n.i)+', fret '+n.f;
+  kpUi(p);
+}
+  var master=null;
+function ac(){if(!ctx){var A=window.AudioContext||window.webkitAudioContext;ctx=new A();master=ctx.createGain();master.gain.value=.8;var cp=ctx.createDynamicsCompressor();cp.threshold.value=-18;cp.knee.value=20;cp.ratio.value=8;cp.attack.value=.003;cp.release.value=.2;master.connect(cp);cp.connect(ctx.destination)}if(ctx.state!='running')ctx.resume()}
+function pluck(m,t0){
+  if(!$('tone').checked||!ctx)return;
+  var o=ctx.createOscillator(),g=ctx.createGain(),t=t0||ctx.currentTime;
+  o.type='triangle';o.frequency.value=440*Math.pow(2,(m-69)/12);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22,t+.005);g.gain.exponentialRampToValueAtTime(.001,t+.6);
+  o.connect(g);g.connect(master);o.onended=function(){o.disconnect();g.disconnect()};o.start(t);o.stop(t+.7);
+}
+function click(acc,t0){
+  if(!$('click').checked||!ctx)return;
+  var o=ctx.createOscillator(),g=ctx.createGain(),t=t0||ctx.currentTime;
+  o.type='square';o.frequency.value=acc?1600:1100;
+  g.gain.setValueAtTime(.08,t);g.gain.exponentialRampToValueAtTime(.001,t+.05);
+  o.connect(g);g.connect(master);o.onended=function(){o.disconnect();g.disconnect()};o.start(t);o.stop(t+.06);
+}
+var q=[],sp=0,nextT=0,wl=null;
+function wake(on){
+  try{
+    if(on&&navigator.wakeLock&&!wl){navigator.wakeLock.request('screen').then(function(l){if(!playing){l.release();return}wl=l;l.addEventListener('release',function(){wl=null})}).catch(function(){})}
+    else if(!on&&wl){wl.release();wl=null}
+  }catch(e){}
+}
+function sched(){
+  var sub=+$('sub').value,dt=60/$('bpm').value/sub,ch=false;
+  if(nextT<ctx.currentTime)nextT=ctx.currentTime+.03;
+  while(nextT<ctx.currentTime+.2){
+    kpEnsure(sp);var e=ev[sp];
+    pluck(segs[e.s].seq[e.k].m,nextT);
+    if(tc%sub==0)click((tc/sub)%4==0,nextT);
+    q.push({t:nextT,p:sp});tc++;nextT+=dt;sp=(sp+1)%ev.length;
+  }
+  while(q.length&&q[0].t<=ctx.currentTime){p=q.shift().p;ch=true}
+  if(ch)render();
+}
+function tick(){
+  clearInterval(timer);q=[];kpEnsure(p);sp=p;nextT=ctx.currentTime+.05;
+  render();
+  timer=setInterval(sched,30);sched();
+  wake(true);
+}
+function parseCu(){
+  var t=$('cu').value.trim(),a=/^\d+$/.test(t)?t.split(''):(t.match(/\d+/g)||[]),m=$('cuMsg');
+  a=a.map(Number).filter(function(x){return x>=1&&x<=15});
+  if(!a.length||a.length>16){m.textContent='Type scale degrees, like 1 3 2 4. Up to 16 notes.';return [0]}
+  m.textContent='Plays degrees '+a.join('-')+' from every note, then slides up one.';
+  return a.map(function(x){return x-1});
+}
+  var dr={g:null,o:[],k:''},CHO={'Major pentatonic':[[0,4,7],[0,4,7,9]],'Minor pentatonic':[[0,3,7],[0,3,7,10]],'Blues':[[0,3,7],[0,3,7,10]],'Major blues':[[0,4,7],[0,4,7,9]],'Whole tone':[[0,4,8],[0,4,8,10]],'Diminished (whole-half)':[[0,3,6],[0,3,6,9]],'Diminished (half-whole)':[[0,4,7],[0,4,7,10]],'Altered':[[0,4,8],[0,4,8,10]],'Hirajoshi':[[0,3,7],[0,3,7,8]],'In-sen':[[0,5,7],[0,5,7,10]],'Bebop dominant':[[0,4,7],[0,4,7,10]],'Bebop major':[[0,4,7],[0,4,7,11]]},QN={'0,4,7':'major','0,3,7':'minor','0,3,6':'diminished','0,4,8':'augmented','0,5,7':'sus4','0,4,7,11':'maj7','0,4,7,10':'7','0,3,7,10':'m7','0,3,7,11':'m(maj7)','0,3,6,10':'m7b5','0,3,6,9':'dim7','0,4,7,9':'6','0,4,8,10':'7#5','0,4,8,11':'maj7#5','0,5,7,10':'7sus4','0,3,7,8':'m(b6)'};
+function chord(){
+  var sc=scaleS.value,iv=SC[sc],m=$('drone').value,o=CHO[sc];
+  if(m=='root')return [0];
+  if(m=='fifth'||sc=='Chromatic')return [0,7];
+  if(o)return m=='triad'?o[0]:o[1];
+  var f=[iv[0],iv[2],iv[4],iv[6]];
+  return m=='triad'?f.slice(0,3):f;
+}
+function stopDrone(){
+  if(!dr.g)return;
+  var t=ctx.currentTime;dr.g.gain.cancelScheduledValues(t);dr.g.gain.setTargetAtTime(0,t,.08);
+  dr.o.forEach(function(o){o.stop(t+.6)});dr.g=null;dr.o=[];dr.k='';
+}
+function updateDrone(){
+  var m=$('drone').value,c=chord(),name='',sc=scaleS.value;
+  var want=m!='off'&&ctx&&($('mode').value=='tap'||(playing&&!document.hidden));
+  if(m!='off'){
+    var nt=c.map(function(x){return NN[(root+x)%12]}).join(' ');
+    name=NN[root]+' '+(sc=='Chromatic'&&m!='root'?'(chromatic has no single chord, so root + fifth)':m=='root'?'root':m=='fifth'?'root + fifth':QN[c.join(',')]||'chord');
+    $('dn').textContent=(want?'Playing: ':'Drone ready: ')+name+' · notes '+nt;
+  }else $('dn').textContent='';
+  if(!want){stopDrone();return}
+  var key=m+'|'+root+'|'+c.join(',');
+  if(dr.g&&dr.k==key)return;
+  stopDrone();
+  var t=ctx.currentTime,g=ctx.createGain(),f=ctx.createBiquadFilter(),ps=[36+root].concat(c.map(function(x){return 48+root+x}));
+  f.type='lowpass';f.frequency.value=700;f.connect(g);g.connect(master);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime($('dv').value/100*.25,t+.5);
+  ps.forEach(function(m2){[-6,6].forEach(function(dt){
+    var o=ctx.createOscillator(),vg=ctx.createGain();
+    o.type='sawtooth';o.frequency.value=440*Math.pow(2,(m2-69)/12);o.detune.value=dt;vg.gain.value=1/(2*ps.length);
+    o.connect(vg);vg.connect(f);o.start(t);dr.o.push(o);
+  })});
+  dr.g=g;dr.k=key;
+}
+function lpUi(){
+  var b=$('lpb'),t=$('lp'),a=loopA>=0&&loopB>=0;
+  function d(k){var s=seq[k];if(!s)return '—';return NN[s.m%12]+' (string '+(6-s.i)+', fret '+s.f+')'}
+  b.textContent=(a||lpMode)?'Clear loop':'Set loop';
+  t.textContent=lpMode==1?'Tap the start note on the fretboard':lpMode==2?'Now tap the end note':a?'Looping '+(loopB-loopA+1)+' notes: '+d(loopA)+' to '+d(loopB):'Loop a section of the route';
+}
+function fmtT(ms){var s=Math.max(0,Math.ceil(ms/1000));return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2)}
+function timerMs(){return (+$('timer').value)*60000}
+function showTimer(){
+  var ms=tEnd?tEnd-performance.now():tLeft,d=timerMs();
+  $('tleft').textContent=(tEnd||tLeft)?fmtT(ms):(d?fmtT(d):'—');
+  $('tleft').classList.toggle('warn',!!tEnd&&ms<=10000);
+  if(tEnd&&ms<=0)timeUp();
+}
+function startTimer(){
+  var d=timerMs();clearInterval(tIv);tIv=null;
+  if(!d){tEnd=0;tLeft=0;showTimer();return}
+  if(!tEnd){if(tLeft<=0)tLeft=d;tEnd=performance.now()+tLeft}
+  tIv=setInterval(showTimer,250);showTimer();
+}
+function pauseTimer(){
+  if(tEnd){tLeft=Math.max(0,tEnd-performance.now());tEnd=0}
+  clearInterval(tIv);tIv=null;
+  $('tleft').classList.remove('warn');showTimer();
+}
+function timeUp(){
+  clearInterval(tIv);tIv=null;tEnd=0;tLeft=0;
+  stop();
+  $('tleft').textContent='0:00';$('tleft').classList.remove('warn');
+  chime();
+  if(navigator.vibrate)navigator.vibrate([200,100,200]);
+}
+function chime(){
+  if(!ctx||!master)return;
+  var t=ctx.currentTime;
+  [0,4,7].forEach(function(s,i){
+    var o=ctx.createOscillator(),g=ctx.createGain(),tt=t+i*.13;
+    o.type='sine';o.frequency.value=440*Math.pow(2,(72+s-69)/12);
+    g.gain.setValueAtTime(0,tt);g.gain.linearRampToValueAtTime(.2,tt+.01);g.gain.exponentialRampToValueAtTime(.001,tt+.6);
+    o.connect(g);g.connect(master);o.start(tt);o.stop(tt+.65);
+    o.onended=function(){o.disconnect();g.disconnect()};
+  });
+}
+function stop(){clearInterval(timer);q=[];playing=false;$('play').textContent='Play';wake(false);pauseTimer();updateDrone()}
+function go(d){
+  ac();updateDrone();p=(p+d+ev.length)%ev.length;kpEnsure(p);
+  if(playing){clearTimeout(timer);tick()}else{render();pluck(segs[ev[p].s].seq[ev[p].k].m)}
+}
+function reset(){var was=playing;clearTimeout(timer);build();tc=0;lpUi();updateDrone();if(was)tick();else render()}
+$('play').onclick=function(){
+  ac();
+  if(playing){stop();return}
+  playing=true;tc=0;$('play').textContent='Pause';startTimer();updateDrone();tick();
+};
+$('prev').onclick=function(){go(-1)};
+$('next').onclick=function(){go(1)};
+['root','scale','nps','frets'].forEach(function(id){$(id).onchange=function(){loopA=loopB=-1;lpMode=0;reset()}});
+['dir','seq','rn','rg'].forEach(function(id){$(id).onchange=reset});
+$('lpb').onclick=function(){
+  if(loopA>=0||lpMode){loopA=loopB=-1;lpMode=0;reset()}else if($('kc').value!='off'){$('lp').textContent='Turn the key cycle off to loop a section';return}else lpMode=1;
+  lpUi();
+};
+$('fb').onclick=function(e){
+  var el=e.target.closest?e.target.closest('[data-k]'):null;if(!el)return;
+  var k=+el.getAttribute('data-k');
+  if(lpMode==1){loopA=k;lpMode=2;lpUi();return}
+  if(lpMode==2){
+    if(k==loopA){$('lp').textContent='Pick a different end note';return}
+    loopB=k;if(loopB<loopA){var t=loopA;loopA=loopB;loopB=t}
+    lpMode=0;reset();return;
+  }
+  ac();var G=kp.grp[segs[ev[p].s].g],pos=-1;for(var i=G.e0;i<=G.e1;i++)if(ev[i].s==ev[p].s&&ev[i].k==k){pos=i;break}
+  if(pos<0)return;p=pos;
+  if(playing){clearTimeout(timer);tick()}else{render();pluck(seq[k].m)}
+};
+$('cu').oninput=reset;
+$('drone').onchange=function(){ac();updateDrone()};
+$('dv').oninput=function(){if(dr.g)dr.g.gain.setTargetAtTime(this.value/100*.25,ctx.currentTime,.05)};
+$('bpm').oninput=function(){$('bv').textContent=this.value+' BPM'};
+$('mode').onchange=function(){var t=this.value=='tap';if(t)stop();$('play').disabled=t;updateDrone()};
+$('timer').onchange=function(){
+  tEnd=0;tLeft=0;clearInterval(tIv);tIv=null;
+  if(playing)startTimer();else showTimer();
+};
+/* ---- key plan: key changes inside the practice ---- */
+var KN=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+var KC={m3d:[-4,3],m3u:[4,3],mn3:[3,4],wt:[2,6],p4:[5,12],p5:[7,12],cu:[1,12],cd:[-1,12],rnd:[0,12]};
+var kp={on:false,cyc:0,appendAt:1e9,grp:[],add:null,streak:0,pair:null,hpair:null,pick:0,from:0,base:[0],start:0,lastOff:null};
+var kpHard={};try{kpHard=JSON.parse(localStorage.getItem('kpHard')||'{}')||{}}catch(e){kpHard={}}
+function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function nearest(c,a){var b=c[0];c.forEach(function(x){if(Math.abs(x-a)<Math.abs(b-a))b=x});return b}
+function kpName(o){return KN[(((kp.start+o)%12)+12)%12]}
+function kpSetup(blocked,start){
+  kp.start=start;kp.cyc=0;kp.lastOff=null;kp.appendAt=1e9;kp.hpair=null;
+  var t=$('kc').value,c=KC[t];kp.on=!!c&&!blocked;
+  if(!kp.on){kp.base=[0];return false}
+  var ns=$('kn').value,n=ns=='all'?c[1]:Math.min(+ns,c[1]),o=[],i;
+  if(t=='rnd'){var all=[1,2,3,4,5,6,7,8,9,10,11];shuf(all);o=[0].concat(all.slice(0,n-1))}
+  else for(i=0;i<n;i++)o.push((((i*c[0])%12)+12)%12);
+  kp.base=o;
+  if($('kd').value=='hard'){
+    var best=null,bc=0;for(var k in kpHard)if(kpHard[k]>bc){bc=kpHard[k];best=k}
+    if(best){var ab=best.split('>'),a=KN.indexOf(ab[0]),b=KN.indexOf(ab[1]);if(a>-1&&b>-1&&a!=b)kp.hpair=[((a-start)%12+12)%12,((b-start)%12+12)%12]}
+  }
+  return true;
+}
+function kpOffsets(){
+  var d=$('kd').value,pr=d=='one'?kp.pair:d=='hard'?kp.hpair:null;
+  if(pr&&pr.length==2&&pr[0]!=pr[1])return pr.slice();
+  var o=kp.base.slice();
+  if(kp.cyc>0&&($('ko').value=='shuf'||$('kc').value=='rnd')){shuf(o);if(o.length>1&&o[0]==kp.lastOff){o.push(o.shift())}}
+  kp.lastOff=o[o.length-1];return o;
+}
+function kpAppend(){
+  var offs=kpOffsets(),cyc=kp.cyc++;
+  offs.forEach(function(off,ki){var G=kp.add(off,kp.grp.length,ki,offs.length,cyc);if(ki==offs.length-1)kp.appendAt=G.e0});
+}
+function kpEnsure(i){if(kp.on)while(i>=kp.appendAt)kpAppend()}
+function kpChips(){
+  var h='';if(kp.on)kp.base.forEach(function(o){h+='<button type="button" data-o="'+o+'">'+kpName(o)+'</button>'});
+  $('kch').innerHTML=h;$('kbar').hidden=!kp.on;kpStatus();
+}
+function kpHardTxt(){
+  var a=[];for(var k in kpHard)a.push([k,kpHard[k]]);a.sort(function(x,y){return y[1]-x[1]});
+  return a.length?a.slice(0,3).map(function(x){return x[0].replace('>',' \u2192 ')+' \u00d7'+x[1]}).join(', '):'none yet';
+}
+function kpStatus(){
+  var st=+$('kt').value;
+  $('kst').textContent=(kp.msg?kp.msg+' \u00b7 ':'')+'Clean streak '+kp.streak+(st?' of 2':'')+' \u00b7 Hard transitions: '+kpHardTxt();
+}
+function kpUi(i){
+  var bar=$('kbar');if(!kp.on){bar.hidden=true;return}
+  bar.hidden=false;
+  var G=kp.grp[evGroup(i)],nG=kp.grp[G.id+1],q=$('kq').value,last=kpIsLast(G,i),show=!!nG&&(q=='always'||(q=='last'&&last));
+  $('kk').textContent='Key '+kpName(G.off)+'  \u00b7  '+(G.ki+1)+' of '+G.n+(G.laps>1?'  \u00b7  '+kpLap(i,G)+' of '+G.laps:'');
+  var x='';
+  if(q=='blind')x='Next key: ?';
+  else if(show&&nG)x='Next key: '+kpName(nG.off)+' \u2014 land on '+NN[evNote(nG.e0).m%12];
+  var d=$('kd').value;
+  if(d=='one'){x=kp.pick==2?'Now tap the key you are changing to':(!kp.pair?'Tap the key you change from, then the key you change to':x)}
+  if(d=='hard'&&!kp.hpair)x='No hard transitions marked yet. Use Mark hard after a bad key change.';
+  $('kx').textContent=x;$('kx').style.color=(show&&last)?'var(--acc)':'';
+  var cs=$('kch').children;
+  for(var j=0;j<cs.length;j++){
+    var o=+cs[j].getAttribute('data-o'),cur=o==G.off,nx=show&&nG&&o==nG.off;
+    cs[j].className=(cur?'on':'')+(nx?' nx':'');
+    cs[j].textContent=(q=='blind'&&!cur)?'?':kpName(o);
+  }
+}
+$('kch').onclick=function(e){
+  var b=e.target.closest?e.target.closest('button'):null;if(!b||$('kd').value!='one')return;
+  var o=+b.getAttribute('data-o');
+  if(kp.pick!=2){kp.pick=2;kp.from=o;kpUi(p);return}
+  if(o==kp.from)return;
+  kp.pair=[kp.from,o];kp.pick=0;reset();
+};
+['kc','kn','kl','ko','kr','kd'].forEach(function(id){var e=$(id);if(e)e.onchange=function(){kp.pair=null;kp.pick=0;reset()}});
+$('kq').onchange=function(){render()};
+$('kt').onchange=function(){kpStatus()};
+$('kok').onclick=function(){
+  if(!kp.on)return;var st=+$('kt').value;kp.streak++;kp.msg='';
+  if(st&&kp.streak>=2){var nb=Math.min(200,+$('bpm').value+st);$('bpm').value=nb;$('bpm').dispatchEvent(new Event('input',{bubbles:true}));kp.streak=0;kp.msg='Tempo up to '+nb+' BPM'}
+  kpStatus();
+};
+$('kno').onclick=function(){if(!kp.on)return;kp.streak=0;kp.msg='';kpStatus()};
+$('khd').onclick=function(){
+  if(!kp.on)return;
+  var G=kp.grp[evGroup(p)],pg=kp.grp[G.id-1];
+  if(!pg){kp.msg='Mark hard after a key change';kpStatus();return}
+  var k=kpName(pg.off)+'>'+kpName(G.off);kpHard[k]=(kpHard[k]||0)+1;
+  try{localStorage.setItem('kpHard',JSON.stringify(kpHard))}catch(e){}
+  kp.msg='Marked '+k.replace('>',' \u2192 ');kpStatus();
+};
+$('kcl').onclick=function(){kpHard={};try{localStorage.removeItem('kpHard')}catch(e){}kp.msg='Hard marks cleared';kpStatus()};
+$('kpre').onchange=function(){
+  if(this.value==='')return;var o=KPRE[+this.value][1];
+  for(var k in o)$(k).value=o[k];
+  $('bv').textContent=$('bpm').value+' BPM';kpClr();kp.pair=null;kp.pick=0;this.value='';reset();
+  $('bpm').dispatchEvent(new Event('input',{bubbles:true}));
+};
+
+function evNote(i){var e=ev[i];return segs[e.s].seq[e.k]}
+function evGroup(i){return segs[ev[i].s].g}
+function kpLap(i,G){return Math.floor((i-G.e0)/segs[G.s].ord.length)+1}
+function kpIsLast(G,i){return (G.e1-i)<4*(+$('sub').value)}
+function kpClr(){loopA=loopB=-1;lpMode=0}
+function useSeg(S){seq=S.seq;ord=S.ord;gi=S.gi;gk=S.gk;gn=S.gn;pcs=S.pcs;root=S.root;firstPlayed=S.fp;view=S.id}
+var CI=SEQ.length-2;
+var KPRE=[
+['Giant Steps keys: B, G, Eb · 4 beats each',{root:'11',scale:'Major',kc:'m3d',kn:'all',kl:'b4',ko:'fix',kq:'last',kd:'full',kr:'2',dir:'ud',seq:String(CI),sub:'2',bpm:'70',kt:'2'}],
+['Giant Steps keys · 2 beats each (fast)',{root:'11',scale:'Major',kc:'m3d',kn:'all',kl:'b2',ko:'fix',kq:'last',kd:'full',kr:'2',dir:'ud',seq:String(CI),sub:'2',bpm:'60',kt:'2'}],
+['All 12 keys, circle of fifths · 1 lap each',{kc:'p5',kn:'all',kl:'l1',ko:'fix',kq:'last',kd:'full',kr:'2',dir:'ud'}],
+['Chromatic keys up · 1 lap each',{kc:'cu',kn:'all',kl:'l1',ko:'fix',kq:'last',kd:'full',kr:'2',dir:'ud'}],
+['6 random keys, blind',{kc:'rnd',kn:'6',kl:'l1',kq:'blind',kd:'full',kr:'2',dir:'ud'}]];
+KPRE.forEach(function(r,i){$('kpre').add(new Option(r[0],i))});
+var SAVE=['kc','kn','kl','ko','kq','kd','kt','kr','root','scale','nps','frets','seq','dir','rn','rg','sub','mode','drone','dv','bpm','cu','timer'],CHK=['tone','click'];
+function save(){
+  try{var o={};SAVE.forEach(function(i){o[i]=$(i).value});CHK.forEach(function(i){o[i]=$(i).checked});localStorage.setItem('scaleTrainer1',JSON.stringify(o))}catch(e){}
+}
+function load(){
+  try{
+    var o=JSON.parse(localStorage.getItem('scaleTrainer1')||'null');if(!o)return;
+    SAVE.forEach(function(i){var e=$(i);if(o[i]==null)return;if(e.tagName=='SELECT'){if([].some.call(e.options,function(x){return x.value==o[i]}))e.value=o[i]}else e.value=o[i]});
+    CHK.forEach(function(i){if(typeof o[i]=='boolean')$(i).checked=o[i]});
+    $('bv').textContent=$('bpm').value+' BPM';$('play').disabled=$('mode').value=='tap';
+  }catch(e){}
+}
+load();
+document.addEventListener('change',save);document.addEventListener('input',save);
+build();lpUi();render();showTimer();
+document.addEventListener('visibilitychange',function(){if(document.hidden)stop();else updateDrone()});
+</script>
+</body>
+</html>
